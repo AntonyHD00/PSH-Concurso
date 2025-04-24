@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Concurso Open House 2025</title>
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Firebase + lógica del sitio -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDLGQr3VDd1sFcr5IpGqNhxuTnFobjUC80",
+      authDomain: "gt-sw-cs.firebaseapp.com",
+      projectId: "gt-sw-cs",
+      storageBucket: "gt-sw-cs.appspot.com",
+      messagingSenderId: "628707122847",
+      appId: "1:628707122847:web:e5ecdcdc0649246f5a0caa",
+      measurementId: "G-85VL6WJPDS"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // Obtener IP pública
+    async function obtenerIPPublica() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+      } catch (e) {
+        return "Desconocida";
+      }
+    }
+
+    // Obtener datos adicionales del navegador y sistema
+    async function recolectarDatosExtras() {
+      const ip = await obtenerIPPublica();
+      const navegador = navigator.userAgent;
+      const lenguaje = navigator.language;
+      const resolucion = `${window.screen.width}x${window.screen.height}`;
+      const plataforma = navigator.platform;
+
+      return {
+        ip,
+        navegador,
+        lenguaje,
+        resolucion,
+        plataforma,
+        fecha: new Date().toISOString(),
+      };
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      const modal = document.getElementById("formModal");
+      const openBtn = document.getElementById("participateBtn");
+      const closeBtn = document.querySelector(".close");
+      const form = document.getElementById("contestForm");
+
+      openBtn.addEventListener("click", () => {
+        modal.style.display = "flex";
+      });
+
+      closeBtn.addEventListener("click", () => {
+        modal.style.display = "none";
+      });
+
+      window.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.style.display = "none";
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const datosFormulario = Object.fromEntries(formData.entries());
+        const datosExtras = await recolectarDatosExtras();
+        const datosCompletos = { ...datosFormulario, ...datosExtras };
+
+        try {
+          await addDoc(collection(db, "participaciones"), datosCompletos);
+          alert("¡Participación enviada con éxito!");
+          form.reset();
+          modal.style.display = "none";
+        } catch (err) {
+          console.error("Error al enviar:", err);
+          alert("Hubo un error al enviar tu participación. Intenta de nuevo.");
+        }
+      });
+    });
+  </script>
+</head>
+<body>
+  <div class="hero">
+    <h1>¡Participa en el Concurso Tecnológico!</h1>
+    <h2>Exclusivo para estudiantes que visitan el Open House 2025</h2>
+    <p class="description">
+      ¿Eres estudiante de una escuela, colegio o institución y estás visitando nuestro evento?
+      Participa y gana increíbles premios. ¡Solo tienes hasta el <strong>3 de mayo de 2025</strong>!
+    </p>
+    <div class="prizes">
+      <div class="prize"><img src="pc.jpg" alt="Laptop" /><p>Laptop</p></div>
+      <div class="prize"><img src="ihone 13.jpeg" alt="iPhone" /><p>iPhone</p></div>
+      <div class="prize"><img src="smartwacth.jpg" alt="Smartwatch" /><p>Smartwatch</p></div>
+    </div>
+    <button id="participateBtn">Participar en el concurso</button>
+  </div>
+
+  <div class="modal" id="formModal" style="display: none;">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h3>Formulario de Participación</h3>
+      <form id="contestForm">
+        <input type="text" name="nombre" placeholder="Nombre" required />
+        <input type="text" name="apellido" placeholder="Apellido" required />
+        <input type="tel" name="telefono" placeholder="Teléfono" required />
+        <input type="email" name="correo" placeholder="Correo electrónico" required />
+        <input type="text" name="institucion" placeholder="Nombre del colegio/institución" required />
+        <input type="text" name="residencia" placeholder="Lugar de residencia" required />
+        <textarea name="comentario" placeholder="¿Por qué quieres ganar?" rows="3"></textarea>
+        <button type="submit">Enviar Participación</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
